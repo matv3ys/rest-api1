@@ -16,6 +16,11 @@ import sqlalchemy
 # rest-api
 import news_api
 import jobs_api
+import users_api
+
+# users_show
+from get_map import get_map
+from requests import get
 
 # настройки приложения
 
@@ -30,7 +35,24 @@ def main():
     db_session.global_init("db/mars_db.sqlite")
     app.register_blueprint(news_api.blueprint)
     app.register_blueprint(jobs_api.blueprint)
+    app.register_blueprint(users_api.blueprint)
     app.run()
+
+
+# hometown
+@app.route("/users_show/<int:user_id>", methods=['GET'])
+def users_show(user_id):
+    request = f'http://localhost:5000/api/users/{user_id}'
+    user = get(request).json()
+    if 'user' in user:
+        name = f'{user["user"]["name"]} {user["user"]["surname"]}'
+        city = user["user"]["city_from"]
+        photo = get_map(city)
+    else:
+        name = 'Not Found'
+        city = 'Nowhere'
+        photo = '/static/img/nf.jpg'
+    return render_template("users_show.html", name=name, city=city, photo=photo)
 
 
 # начальная страница (список работ)
@@ -263,7 +285,7 @@ def edit_dep(id):
             dep = session.query(Department).filter(Department.id == id).first()
         else:
             dep = session.query(Department).filter(Department.id == id,
-                                             Department.creator == current_user.id).first()
+                                                   Department.creator == current_user.id).first()
         if dep:
             form.title.data = dep.title
             form.chief_id.data = dep.chief
@@ -277,7 +299,7 @@ def edit_dep(id):
             dep = session.query(Department).filter(Department.id == id).first()
         else:
             dep = session.query(Department).filter(Department.id == id,
-                                             Department.creator == current_user.id).first()
+                                                   Department.creator == current_user.id).first()
         if dep:
             dep.title = form.title.data
             dep.chief = form.chief_id.data
@@ -299,7 +321,7 @@ def dep_delete(id):
         dep = session.query(Department).filter(Department.id == id).first()
     else:
         dep = session.query(Department).filter(Department.id == id,
-                                         Department.creator == current_user.id).first()
+                                               Department.creator == current_user.id).first()
     if dep:
         session.delete(dep)
         session.commit()
